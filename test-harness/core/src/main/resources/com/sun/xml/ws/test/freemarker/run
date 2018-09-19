@@ -1,0 +1,99 @@
+#!/bin/bash -ex
+#
+# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Distribution License v. 1.0, which is available at
+# http://www.eclipse.org/org/documents/edl-v10.php.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+
+# service id: ${serviceId}
+# stage: ${stage}
+cd "$(dirname "$0")"
+
+export CTX=${serviceId}:${stage}-run
+# global testcase status
+L_STATUS=0
+export G_STATUS=0
+
+if [ "$PORT" = "" -o "$STOP_PORT" = "" ]; then
+    echo "Variable PORT or STOP_PORT not defined. It is required for WS deployment.";
+    echo "PORT=$PORT"
+    echo "STOP_PORT=$STOP_PORT"
+    return 1;
+fi
+
+cd ${workdir}
+
+. shared
+
+prolog $CTX
+
+. 0-clean
+
+if [ "$useagent" = "true" ]; then
+    export JAVA_OPTS=-javaagent:$NO_HARNESS/agent-0.1.jar
+    export TOOL_JAVA_OPTS=-J-javaagent:$NO_HARNESS/agent-0.1.jar
+else
+    export JAVA_OPTS=
+    export TOOL_JAVA_OPTS=
+fi;
+
+function logStepStatus() {
+
+    # script just passed (first 2) || just failed (3rd) => wasnt skipped
+    if [ "$failFast" != "true" ] || [ "$G_STATUS" = "0" ] || [ "$L_STATUS" = "1"  ]; then
+
+        if [ $L_STATUS -eq 0 ]; then
+             TOTAL_PASSED=$((TOTAL_PASSED+1))
+             echo "PASSED:  $TOTAL_PASSED. $CTX" >> $GLOBAL_LOG_PREFIX-passed-total.txt 2>&1
+        else
+             TOTAL_FAILED=$((TOTAL_FAILED+1))
+             echo "FAILED:  $TOTAL_FAILED. $CTX" >> $GLOBAL_LOG_PREFIX-failed-total.txt 2>&1
+        fi;
+    else
+        echo "test skipped" >> log.txt 2>&1
+    fi;
+}
+
+<#list scripts as script>
+. ${script}
+logStepStatus
+
+</#list>
+
+# ----------------------------------------------------
+# undeploy
+# ----------------------------------------------------
+<#if shutdownPorts??>
+    <#if  shutdownPorts?has_content>
+if [ "$debug" = "true" ]; then
+    <#list shutdownPorts as port>
+    wget http://127.0.0.1:$((STOP_PORT+${port_index}))/stop
+    </#list>
+else
+    <#list shutdownPorts as port>
+   wget http://127.0.0.1:$((STOP_PORT+${port_index}))/stop >> log.txt 2>&1
+    </#list>
+fi;
+    </#if>
+</#if>
+
+r sleep 1
+
+# ----------------------------------------------------
+# testcase result
+# ----------------------------------------------------
+if [ $G_STATUS -eq 0 ]; then
+     echo "    OK: $CTX"
+     PASSED=$((PASSED+1))
+     echo "PASSED:  $PASSED. $CTX" >> $GLOBAL_LOG_PREFIX-passed.txt 2>&1
+else
+     echo "FAILED: ${serviceId}"
+     FAILED=$((FAILED+1))
+     echo "FAILED:  $FAILED. ${serviceId}" >> $GLOBAL_LOG_PREFIX-failed.txt 2>&1
+     echo ". "`pwd`/run >> $RUNALL_FAILED
+fi;
+

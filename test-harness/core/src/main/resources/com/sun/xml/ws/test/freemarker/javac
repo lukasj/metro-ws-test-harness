@@ -1,0 +1,49 @@
+#!/bin/bash -ex
+#
+# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Distribution License v. 1.0, which is available at
+# http://www.eclipse.org/org/documents/edl-v10.php.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+
+# service id: ${serviceId}
+# stage: ${stage}
+L_STATUS=0
+
+if [ "$G_STATUS" = "1" ]; then
+    return 1
+fi;
+
+TOTAL_STEPS=$((TOTAL_STEPS+1))
+
+export CTX=${serviceId}:${stage}-javac
+
+. shared
+
+prolog $CTX
+
+<#list mkdirs as dir>
+mkdirp ${dir}
+</#list>
+
+# to be sure the directory is there (used in classpath ...)
+mkdirp client-classes
+
+<#if classpath??>
+CLIENT_CLASSPATH=${classpath}
+</#if>
+CLIENT_CLASSPATH=$CLIENT_CLASSPATH:$SHARED_LIB
+
+# compile generated client sources
+mkdirp shared-source
+cp -R -v $SHARED_DIR/src/* shared-source >> log.txt 2>&1
+
+collectSources ../src/common shared-source
+
+r javac $TOOL_JAVA_OPTS \
+<#list params as param>
+        ${param} <#if param_has_next>\</#if>
+</#list>
