@@ -32,11 +32,49 @@
         <connection>scm:git:ssh://git@github.com/eclipse-ee4j/metro-ws-test-harness.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/eclipse-ee4j/metro-ws-test-harness.git</developerConnection>
         <url>https://github.com/eclipse-ee4j/metro-ws-test-harness</url>
+        <tag>HEAD</tag>
     </scm>
+
+    <licenses>
+        <license>
+            <name>Eclipse Distribution License - v 1.0</name>
+            <url>http://www.eclipse.org/org/documents/edl-v10.php</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Lukas Jungmann</name>
+            <email>lukas.jungmann@oracle.com</email>
+            <organization>Oracle Corporation</organization>
+        </developer>
+    </developers>
+
+    <organization>
+        <name>Oracle</name>
+        <url>http://www.oracle.com/</url>
+    </organization>
+
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/eclipse-ee4j/metro-ws-test-harness/issues</url>
+    </issueManagement>
+
+    <mailingLists>
+        <mailingList>
+            <name>Eclipse Metro mailing list</name>
+            <post>metro-dev@eclipse.org</post>
+            <subscribe>https://accounts.eclipse.org/mailing-list/metro-dev</subscribe>
+            <unsubscribe>https://accounts.eclipse.org/mailing-list/metro-dev</unsubscribe>
+            <archive>https://www.eclipse.org/lists/metro-dev</archive>
+        </mailingList>
+    </mailingLists>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <netbeans.hint.jdkPlatform>JDK_1.7</netbeans.hint.jdkPlatform>
+        <harness.bootstrap.version>${project.version}</harness.bootstrap.version>
     </properties>
 
     <modules>
@@ -60,7 +98,7 @@
             <dependency>
                 <groupId>org.glassfish.metro</groupId>
                 <artifactId>harness-bootstrap</artifactId>
-                <version>2.3.2-SNAPSHOT</version>
+                <version>${harness.bootstrap.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ant</groupId>
@@ -75,7 +113,7 @@
             <dependency>
                 <groupId>args4j</groupId>
                 <artifactId>args4j</artifactId>
-                <version>2.0.19</version>
+                <version>2.33</version>
             </dependency>
             <dependency>
                 <groupId>org.apache-extras.beanshell</groupId>
@@ -167,31 +205,15 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>com.thaiopensource</groupId>
+                <groupId>org.daisy.libs</groupId>
                 <artifactId>jing</artifactId>
-                <version>20151127</version>
-            </dependency>
-            <dependency>
-                <groupId>com.thaiopensource</groupId>
-                <artifactId>trang</artifactId>
-                <version>20151127</version>
+                <version>20151127.0.0</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
             </dependency>
-          <!--  <dependency>
-                <groupId>org.kohsuke</groupId>
-                <artifactId>parallel-junit</artifactId>
-                <version>1.1</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>junit</artifactId>
-                        <groupId>junit</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>-->
             <dependency>
                 <groupId>com.sun.xml.bind.jaxb</groupId>
                 <artifactId>isorelax</artifactId>
