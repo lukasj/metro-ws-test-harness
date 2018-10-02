@@ -74,10 +74,6 @@
             <groupId>org.jvnet.hudson</groupId>
             <artifactId>commons-jelly</artifactId>
         </dependency>
-<!--        <dependency>
-            <groupId>net.sourceforge.cobertura</groupId>
-            <artifactId>cobertura</artifactId>
-        </dependency>-->
         <dependency>
             <groupId>com.sun.istack</groupId>
             <artifactId>istack-commons-runtime</artifactId>
@@ -87,21 +83,13 @@
             <artifactId>istack-commons-test</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.thaiopensource</groupId>
+            <groupId>org.daisy.libs</groupId>
             <artifactId>jing</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.thaiopensource</groupId>
-            <artifactId>trang</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
-        <!--<dependency>
-            <groupId>org.kohsuke</groupId>
-            <artifactId>parallel-junit</artifactId>
-        </dependency>-->
         <dependency>
             <groupId>com.sun.xml.bind.jaxb</groupId>
             <artifactId>isorelax</artifactId>
