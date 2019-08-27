@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
 
     This program and the accompanying materials are made available under the
     terms of the Eclipse Distribution License v. 1.0, which is available at
@@ -65,8 +65,14 @@
     </mailingLists>
 
     <properties>
-        <metro.version>2.3.1</metro.version>
-        <jaxws-ri.version>2.3.1</jaxws-ri.version>
+        <jakarta.jws-api.version>1.1.1</jakarta.jws-api.version>
+        <jakarta.xml.bind-api.version>2.3.2</jakarta.xml.bind-api.version>
+        <jakarta.xml.soap-api.version>1.4.1</jakarta.xml.soap-api.version>
+        <jakarta.xml.ws-api.version>2.3.2</jakarta.xml.ws-api.version>
+        <jakarta.activation.version>1.2.1</jakarta.activation.version>
+        <istack-commons.version>3.1.0-SNAPSHOT</istack-commons.version>
+        <metro.version>2.4.3</metro.version>
+        <jaxws-ri.version>2.3.2</jaxws-ri.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <legal.doc.source>${maven.multiModuleProjectDirectory}</legal.doc.source>
     </properties>
@@ -81,12 +87,23 @@
             <dependency>
                 <groupId>jakarta.xml.ws</groupId>
                 <artifactId>jakarta.xml.ws-api</artifactId>
-                <version>2.3.2</version>
+                <version>${jakarta.xml.ws-api.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>jakarta.activation</groupId>
+                        <artifactId>jakarta.activation-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.activation</groupId>
+                <artifactId>jakarta.activation</artifactId>
+                <version>${jakarta.activation.version}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.jws</groupId>
                 <artifactId>jakarta.jws-api</artifactId>
-                <version>1.1.1</version>
+                <version>${jakarta.jws-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.metro</groupId>
@@ -113,15 +130,11 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <!-- CQ: 17725 -->
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-plugin-api</artifactId>
                 <version>3.5.4</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.plexus</groupId>
-                <artifactId>plexus-utils</artifactId>
-                <version>3.1.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
@@ -133,6 +146,7 @@
                 <artifactId>plexus-archiver</artifactId>
                 <version>3.5</version>
             </dependency>
+            <!-- CQ: 17829 -->
             <dependency>
                 <groupId>org.apache.maven.plugin-tools</groupId>
                 <artifactId>maven-plugin-annotations</artifactId>
@@ -141,12 +155,12 @@
             <dependency>
                 <groupId>org.apache.ant</groupId>
                 <artifactId>ant</artifactId>
-                <version>1.10.2</version>
+                <version>1.10.6</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ant</groupId>
                 <artifactId>ant-junit</artifactId>
-                <version>1.10.2</version>
+                <version>1.10.6</version>
             </dependency>
             <dependency>
                 <groupId>args4j</groupId>
@@ -158,51 +172,28 @@
                 <artifactId>bsh</artifactId>
                 <version>2.0b6</version>
             </dependency>
+            <!-- CQ: 19644 -->
             <dependency>
                 <groupId>org.codehaus.cargo</groupId>
                 <artifactId>cargo-core-uberjar</artifactId>
-                <version>1.6.7</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>jaxb-api</artifactId>
-                        <groupId>javax.xml.bind</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jaxb-impl</artifactId>
-                        <groupId>com.sun.xml.bind</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>msv</artifactId>
-                        <groupId>msv</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>relaxngDatatype</artifactId>
-                        <groupId>relaxngDatatype</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>isorelax</artifactId>
-                        <groupId>isorelax</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>xercesImpl</artifactId>
-                        <groupId>xerces</groupId>
-                    </exclusion>
-                </exclusions>
+                <version>1.7.7</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-classworlds</artifactId>
                 <version>2.5.2</version>
             </dependency>
+            <!-- CQ: 19526 -->
             <dependency>
-                <groupId>org.jvnet.hudson</groupId>
-                <artifactId>commons-jelly</artifactId>
-                <version>1.1-hudson-20100305</version>
-            </dependency>
-            <dependency>
-                <groupId>org.daisy.libs</groupId>
+                <groupId>org.relaxng</groupId>
                 <artifactId>jing</artifactId>
-                <version>20151127.0.0</version>
+                <version>20181222</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -214,10 +205,11 @@
                 <artifactId>isorelax</artifactId>
                 <version>20090621</version>
             </dependency>
+            <!-- CQ: 19582 -->
             <dependency>
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
-                <version>2.3.27-incubating</version>
+                <version>2.3.28</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -279,17 +271,42 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.0.1</version>
+                    <version>3.1.0</version>
+                    <configuration>
+                        <detectJavaApiLink>false</detectJavaApiLink>
+                        <detectOfflineLinks>false</detectOfflineLinks>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
                     <version>3.0.0-M2</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.glassfish.copyright</groupId>
+                    <artifactId>glassfish-copyright-maven-plugin</artifactId>
+                    <version>2.1</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
         <plugins>
+            <plugin>
+                <groupId>org.glassfish.copyright</groupId>
+                <artifactId>glassfish-copyright-maven-plugin</artifactId>
+                <configuration>
+                    <excludeFile>copyright-exclude</excludeFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>copyright-check</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>

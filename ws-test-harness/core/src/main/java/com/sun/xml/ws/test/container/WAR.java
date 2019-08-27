@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Distribution License v. 1.0, which is available at
@@ -21,13 +21,11 @@ import com.sun.xml.ws.test.model.WSDL;
 import com.sun.xml.ws.test.tool.WsTool;
 import com.sun.xml.ws.test.util.ArgumentListBuilder;
 import com.sun.xml.ws.test.util.FileUtil;
+import com.sun.xml.ws.test.util.FreeMarkerTemplate;
 import com.sun.xml.ws.test.util.JavacTask;
-import com.sun.xml.ws.test.util.Jelly;
 import org.apache.tools.ant.taskdefs.Jar;
 import org.apache.tools.ant.taskdefs.Zip;
 import org.apache.tools.ant.types.Path;
-import org.dom4j.Document;
-import org.dom4j.io.SAXReader;
 
 import javax.jws.WebService;
 import javax.xml.namespace.QName;
@@ -43,6 +41,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
 
 /**
  * Represents an exploded WAR file on a file system.
@@ -262,7 +262,7 @@ public final class WAR {
 
     /**
      * Copies the classpath specified by the given {@link Path}
-     * into <tt>WEB-INF/lib</tt> and <tt>WEB-INF/classes</tt>
+     * into <code>WEB-INF/lib</code> and <code>WEB-INF/classes</code>
      */
     public void copyClasspath(Realm classpath) throws Exception {
         int n = 0;
@@ -301,7 +301,7 @@ public final class WAR {
     }
 
     /**
-     * Copies resources under the directory in to <tt>WEB-INF/classes</tt>
+     * Copies resources under the directory in to <code>WEB-INF/classes</code>
      */
     public void copyResources(File resourcesDir) {
         if(resourcesDir != null) {
@@ -321,7 +321,7 @@ public final class WAR {
      * <p>
      * This is either copied from the test data (for "fromwsdl" tests),
      * or generated (for "fromjava" tests.) For fromjava tests with
-     * multiple <tt>WebService</tt> classes, you may get more than one WSDLs.
+     * multiple <code>WebService</code> classes, you may get more than one WSDLs.
      *
      * <p>
      * In a situation where there's no WSDL and just provider service,
@@ -339,8 +339,8 @@ public final class WAR {
      *      list of endpoints that were discovered.
      */
     final void generateSunJaxWsXml(List<EndpointInfoBean> endpointInfoBeans) throws Exception {
-        Jelly jelly = new Jelly(getClass(),"jelly/sun-jaxws.jelly");
-        jelly.set("endpointInfoBeans", endpointInfoBeans);
+        FreeMarkerTemplate jelly = new FreeMarkerTemplate("/web/sun-jaxws.ftl");
+        jelly.put("endpointInfoBeans", endpointInfoBeans);
         jelly.run(new File(webInfDir, "sun-jaxws.xml"));
     }
 
@@ -353,7 +353,7 @@ public final class WAR {
      * @see WebXmlInfoBean
      */
     final void generateWebXml(List<EndpointInfoBean> endpoints, boolean httpspi) throws Exception {
-        Jelly jelly = new Jelly(getClass(),"jelly/web.jelly");
+        FreeMarkerTemplate jelly = new FreeMarkerTemplate("/web/web.ftl");
         String listenerClass = httpspi
                 ? "com.sun.xml.ws.transport.httpspi.servlet.WSSPIContextListener"
                 : "com.sun.xml.ws.transport.http.servlet.WSServletContextListener"  ;
@@ -361,15 +361,15 @@ public final class WAR {
                 ? "com.sun.xml.ws.transport.httpspi.servlet.WSSPIServlet"
                 : "com.sun.xml.ws.transport.http.servlet.WSServlet";
         WebXmlInfoBean infoBean = new WebXmlInfoBean(service.parent,endpoints, listenerClass, servletClass );
-        jelly.set("data", infoBean);
+        jelly.put("data", infoBean);
         jelly.run(new File(webInfDir, "web.xml"));
     }
 
     /**
-     * Generates <tt>sun-web.xml</tt>
+     * Generates <code>sun-web.xml</code>
      */
     final void generateSunWebXml() throws Exception {
-        Jelly jelly = new Jelly(getClass(),"jelly/sun-web.jelly");
+        FreeMarkerTemplate jelly = new FreeMarkerTemplate("/web/sun-web.ftl");
         jelly.run(new File(webInfDir, "sun-web.xml"));
     }
 
@@ -437,7 +437,7 @@ public final class WAR {
     }
 
     /**
-     * Compiles Java source files into <tt>WEB-INF/classes</tt>.
+     * Compiles Java source files into <code>WEB-INF/classes</code>.
      */
     final void compileJavac() throws Exception {
         JavacTask javac = new JavacTask(service.parent.descriptor.javacOptions);
@@ -495,8 +495,8 @@ public final class WAR {
             options.invoke(wsgen);
 
             // parse report
-            Document dom = new SAXReader().read(report);
-            wsdl.add(new File(dom.getRootElement().elementTextTrim("wsdl")));
+            Document dom = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(report);
+            wsdl.add(new File(dom.getDocumentElement().getElementsByTagName("wsdl").item(0).getTextContent().trim()));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Distribution License v. 1.0, which is available at
@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
@@ -48,10 +47,15 @@ import org.codehaus.plexus.util.cli.StreamConsumer;
 
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.DependencyRequest;
+import org.eclipse.aether.resolution.DependencyResolutionException;
+import org.eclipse.aether.resolution.DependencyResult;
 
 /**
  * Executes tests written for WS Test Harness.
@@ -65,7 +69,6 @@ public class WSTestMojo extends AbstractMojo {
     private static final String HARNESS_AID = "harness-lib";
     private static final String TOPLINK_FACTORY = "com.sun.xml.ws.db.toplink.JAXBContextFactory";
     private static final String SDO_FACTORY = "com.sun.xml.ws.db.sdo.SDOContextFactory";
-    private static final String JAXWS_API_VERSION = "2.2.8";
 
     public enum Databinding {
         DEFAULT, TOPLINK, SDO;
@@ -82,14 +85,14 @@ public class WSTestMojo extends AbstractMojo {
     /**
      * Version of Test Harness library to use for running tests.
      */
-    @Parameter(defaultValue = "2.3.2-SNAPSHOT")
+    @Parameter(defaultValue = "2.4.0-SNAPSHOT")
     private String harnessVersion;
 
     /**
      * Specify the target JAX-WS version being tested. This determines test
      * exclusions.
      */
-    @Parameter(defaultValue = "2.2.8")
+    @Parameter(defaultValue = "2.3.2")
     private String version;
 
     /**
@@ -151,7 +154,7 @@ public class WSTestMojo extends AbstractMojo {
 
     /**
      * Define FastInfoset mode to be used by tests.
-     * 
+     *
      * Supported values:
      * <ul>
      * <li><code>none</code>
@@ -307,8 +310,21 @@ public class WSTestMojo extends AbstractMojo {
         cmd.setExecutable(new File(new File(System.getProperty("java.home"), "bin"), getJavaExec()).getAbsolutePath());
         cmd.setWorkingDirectory(project.getBasedir());
 
+        // lukas:
+        // Some jar files on the classpath may be multi-release jars.
+        // To allow AntClassLoader (used by Harness) to find correct class files
+        // in these jars, either make sure that Ant 1.10.6+ is used at runtime
+        // or force JDK to always create JarFile instances with Runtime.Version
+        // of the JDK being used.
+        // Since the former requirement is hard to guarantee and to prevent false
+        // alarms when running tests, let's just force JDK to use the right
+        // JarFile constructor ourselves.
+        // for more details, see: https://bz.apache.org/bugzilla/show_bug.cgi?id=62952
+        // see also com.sun.xml.ws.test.Realm.getClassLoader()
+        cmd.createArg().setLine("-Djdk.util.jar.enableMultiRelease=force");
+
         //set API bootclasspath/endorsed
-        if (imageRoot != null) {
+        if (imageRoot != null && isEndorsedSupported()) {
             File end = prepareEndorsed(imageRoot);
             getLog().info("Setting endorsed directory to: " + end.getAbsolutePath());
             cmd.createArg().setLine("-Djava.endorsed.dirs=" + end.getAbsolutePath());
@@ -316,7 +332,9 @@ public class WSTestMojo extends AbstractMojo {
             getLog().info("Setting endorsed directory to: " + endorsedDir.getAbsolutePath());
             cmd.createArg().setValue("-Djava.endorsed.dirs=" + endorsedDir.getAbsolutePath());
         } else {
-            getLog().warn("Endorsed not applied. Set 'endorsedDir' in plugin's configuration.");
+            if (isEndorsedSupported()) {
+                getLog().warn("Endorsed not applied. Set 'endorsedDir' in plugin's configuration.");
+            }
         }
 
         if (extDir != null && extDir.exists() && extDir.isDirectory()) {
@@ -572,7 +590,8 @@ public class WSTestMojo extends AbstractMojo {
 
     private Set<Artifact> getHarnessLib() throws MojoExecutionException {
        org.eclipse.aether.artifact.DefaultArtifact harnessLib = new org.eclipse.aether.artifact.DefaultArtifact(HARNESS_GID,HARNESS_AID, null, "jar", harnessVersion);
-       Set<ArtifactRequest> dependenciesRequest = new HashSet<ArtifactRequest>();
+       Set<Artifact> result = new HashSet<>();
+       Set<ArtifactRequest> dependenciesRequest = new HashSet<>();
        ArtifactRequest request = new ArtifactRequest();
        request.setArtifact(harnessLib);
        request.setRepositories(remoteRepos);
@@ -583,13 +602,34 @@ public class WSTestMojo extends AbstractMojo {
            resolvedDependencies = repoSystem.resolveArtifacts(repoSession, dependenciesRequest);
        } catch (ArtifactResolutionException ex) {
            throw new MojoExecutionException(ex.getMessage(), ex);
-       }
+        }
 
-       Set<Artifact> artifacts = new HashSet<Artifact>();
-       for (ArtifactResult dependency : resolvedDependencies) {
-           artifacts.add(dependency.getArtifact());
-       }
-       return artifacts;
+        List<Dependency> artifacts = new ArrayList<>();
+        for (ArtifactResult dependency : resolvedDependencies) {
+            Artifact a = dependency.getArtifact();
+            result.add(a);
+            artifacts.add(new Dependency(dependency.getArtifact(), "compile"));
+        }
+
+        DependencyResult res = null;
+        try {
+            CollectRequest cr = new CollectRequest(artifacts.iterator().next(), remoteRepos);
+            DependencyRequest dr = new DependencyRequest();
+            dr.setCollectRequest(cr);
+            res = repoSystem.resolveDependencies(repoSession, dr);
+        } catch (DependencyResolutionException ex) {
+            throw new MojoExecutionException(ex.getMessage(), ex);
+        }
+
+        for (ArtifactResult dependency : res.getArtifactResults()) {
+            Artifact a = dependency.getArtifact();
+            if (getLog().isDebugEnabled()) {
+                getLog().debug("got dependency: " + a.getGroupId() + ":" + a.getArtifactId() + ":" + a.getVersion());
+            }
+            result.add(dependency.getArtifact());
+        }
+
+        return result;
     }
 
     private boolean isToplink() {
@@ -683,4 +723,15 @@ public class WSTestMojo extends AbstractMojo {
         }
         return null;
     }
+
+    private boolean isEndorsedSupported() {
+        String s = System.getProperty("java.version");
+        try {
+            int i = Integer.parseInt(s.substring(0, s.indexOf(".")));
+            return i < 10;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
 }

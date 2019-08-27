@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Distribution License v. 1.0, which is available at
@@ -15,6 +15,7 @@ import com.sun.xml.ws.test.World;
 import com.sun.xml.ws.test.container.jelly.EndpointInfoBean;
 import com.sun.xml.ws.test.model.TestService;
 import com.sun.xml.ws.test.tool.WsTool;
+import com.sun.xml.ws.test.util.WSITUtil;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -23,15 +24,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.dom4j.Attribute;
-import org.dom4j.Document;
-import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
-import org.dom4j.io.XMLWriter;
 
 /**
  * Base implementation of {@link ApplicationContainer}.
- * <p/>
+ * <p>
  * This implementation provides code for common tasks, such as assembling files
  * into a war, etc.
  *
@@ -133,22 +129,7 @@ public abstract class AbstractApplicationContainer implements ApplicationContain
     protected void updateWsitClient(WAR war, DeployedService deployedService, String id) throws Exception {
         File wsitClientFile = new File(deployedService.getResources(), "wsit-client.xml");
         if (wsitClientFile.exists()) {
-            SAXReader reader = new SAXReader();
-            Document document = reader.read(wsitClientFile);
-            Element root = document.getRootElement();
-            Element policy = root.element("Policy");
-            Element sts = policy.element("ExactlyOne").element("All").element("PreconfiguredSTS");
-
-            Attribute endpoint = sts.attribute("endpoint");
-            endpoint.setValue(id);
-
-            Attribute wsdlLoc = sts.attribute("wsdlLocation");
-            String x = deployedService.service.wsdl.get(0).wsdlFile.toURI().toString();
-            wsdlLoc.setValue(x);
-
-            XMLWriter writer = new XMLWriter(new FileWriter(wsitClientFile));
-            writer.write(document);
-            writer.close();
+            WSITUtil.updateWsitClient(wsitClientFile, id, deployedService.service.wsdl.get(0).wsdlFile.toURI().toString());
             war.copyWsit(wsitClientFile);
         } else {
             throw new RuntimeException("wsit-client.xml is absent. It is required. \n"

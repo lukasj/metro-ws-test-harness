@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Distribution License v. 1.0, which is available at
@@ -32,7 +32,6 @@ import org.apache.tools.ant.DefaultLogger;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter;
 import org.codehaus.classworlds.ClassWorld;
-import org.dom4j.DocumentException;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -72,7 +71,7 @@ public class Main {
      * Tests to be executed.
      */
     @Argument
-    final List<String> tests = new ArrayList<String>();
+    List<String> tests = new ArrayList<String>();
 
     @Option(name = "-r", usage = "find test directories recursively")
     boolean recursive = false;
@@ -402,6 +401,11 @@ public class Main {
 
         // fill in runtime and tool realms
         if (wsitImage != null) {
+            if (System.getProperty("java.endorsed.dirs") == null) {
+                // APIs should come from endorsed on JDK 8 and older
+                File rtJar = new File(wsitImage, "lib/webservices-api.jar");
+                runtime.addJar(rtJar);
+            }
             File rtJar = new File(wsitImage, "lib/webservices-rt.jar");
             runtime.addJar(rtJar);
 
@@ -436,9 +440,22 @@ public class Main {
                 tool.addJar(new File(jaxwsImage, "lib/jaxb-jxc.jar"));
             }
             tool.addJar(new File(jaxwsImage, "lib/jaxb-xjc.jar"));
+            List<String> exclusionList = new ArrayList<>();
+            exclusionList.add("saaj-api.jar");
+            exclusionList.add("jaxb-api.jar");
+            exclusionList.add("jaxws-tools.jar");
+            exclusionList.add("jaxws-api.jar");
+            exclusionList.add("jaxb-jxc.jar");
+            exclusionList.add("jaxb-xjc.jar");
+            if (System.getProperty("java.endorsed.dirs") != null) {
+                // APIs should come from endorsed on JDK 8 and older
+                exclusionList.add("jakarta.jws-api.jar");
+                exclusionList.add("jakarta.xml.bind-api.jar");
+                exclusionList.add("jakarta.xml.soap-api.jar");
+                exclusionList.add("jakarta.xml.ws-api.jar");
+            }
             runtime.addJarFolder(new File(jaxwsImage, "lib"),
-                    "saaj-api.jar", "jaxb-api.jar", "jaxws-api.jar",
-                    "jaxws-tools.jar", "jaxb-jxc.jar", "jaxb-xjc.jar");
+                    exclusionList.toArray(new String[exclusionList.size()]));
 
         } else if (jaxwsWs != null) {
 
@@ -449,8 +466,13 @@ public class Main {
                         ? "target/generated-classes/cobertura"
                         : "target/classes";
 
+                if (new File(jaxwsWs, "rt/" + classesFolder + "/META-INF/versions/9").exists()) {
+                    runtime.addClassFolder(new File(jaxwsWs, "rt/" + classesFolder + "/META-INF/versions/9"));
+                }
                 runtime.addClassFolder(new File(jaxwsWs, "rt/" + classesFolder));
-                runtime.addClassFolder(new File(jaxwsWs, "rt-ha/" + classesFolder));
+                if (new File(jaxwsWs, "rt-ha/" + classesFolder).exists()) {
+                    runtime.addClassFolder(new File(jaxwsWs, "rt-ha/" + classesFolder));
+                }
                 runtime.addClassFolder(new File(jaxwsWs, "servlet/" + classesFolder));
                 runtime.addClassFolder(new File(jaxwsWs, "rt-fi/" + classesFolder));
                 runtime.addClassFolder(new File(jaxwsWs, "httpspi-servlet/" + classesFolder));
@@ -467,6 +489,9 @@ public class Main {
                     runtime.addClassFolder(new File(jaxwsWs, "eclipselink_sdo/" + classesFolder));
                 }
 
+                if (new File(jaxwsWs, "tools/wscompile/" + classesFolder + "/META-INF/versions/9").exists()) {
+                    tool.addClassFolder(new File(jaxwsWs, "tools/wscompile/" + classesFolder + "/META-INF/versions/9"));
+                }
                 tool.addClassFolder(new File(jaxwsWs, "tools/wscompile/" + classesFolder));
 
                 //now find libraries
@@ -708,7 +733,7 @@ public class Main {
 
             appContainer = new RemoteCargoApplicationContainer(
                     wsimport, wsgen,
-                    "tomcat5x",
+                    "tomcat9x",
                     new URL("http", matcher.group(4),
                             Integer.parseInt(defaultsTo(matcher.group(6), "8080")),
                             "/"),
@@ -809,7 +834,7 @@ public class Main {
      * Scans the given directory, builds {@link TestDescriptor}s,
      * and schedule them to {@link TestSuite}.
      */
-    private void build(File dir, ApplicationContainer container, WsTool wsimport, TestSuite suite) throws IOException, DocumentException, ParserConfigurationException,
+    private void build(File dir, ApplicationContainer container, WsTool wsimport, TestSuite suite) throws IOException, ParserConfigurationException,
             SAXException {
         File descriptor = new File(dir, "test-descriptor.xml");
 
@@ -849,15 +874,9 @@ public class Main {
                         suite.addTest(td[1].build(container, wsimport, clientScriptName, concurrentSideEffectFree, version));
                     }
                 }
-            } catch (IOException e) {
+            } catch (IOException | ParserConfigurationException | SAXException e) {
                 // even if we fail to process this descriptor, don't let the whole thing fail.
                 // just report that failure as a test failure.
-                suite.addTest(new FailedTest("invalid descriptor", e));
-            } catch (DocumentException e) {
-                suite.addTest(new FailedTest("invalid descriptor", e));
-            } catch (ParserConfigurationException e) {
-                suite.addTest(new FailedTest("invalid descriptor", e));
-            } catch (SAXException e) {
                 suite.addTest(new FailedTest("invalid descriptor", e));
             }
             return;
@@ -974,8 +993,19 @@ public class Main {
                     tv.addFeature("servlet30");
                     tv.addFeature("servlet31");
                     break;
+                case '9':
+                    tv.setId("tomcat9x");
+                    tv.addFeature("servlet30");
+                    tv.addFeature("servlet31");
+                    tv.addFeature("servlet40");
+                    break;
                 default:
-                    tv.setId("tomcat5x");
+                    Logger.getLogger(Main.class.getName()).log(Level.WARNING, "Unrecognized Tomcat version: {0}.{1}", new Object[]{specVersion, implVersion});
+                    Logger.getLogger(Main.class.getName()).log(Level.WARNING, "Using default tomcat9x...");
+                    tv.setId("tomcat9x");
+                    tv.addFeature("servlet30");
+                    tv.addFeature("servlet31");
+                    tv.addFeature("servlet40");
             }
             return tv;
         }
