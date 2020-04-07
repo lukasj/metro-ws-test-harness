@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.jar.JarFile;
 import org.eclipse.aether.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
@@ -431,6 +432,7 @@ public class WSTestMojo extends AbstractMojo {
         }
 
         cmd.createArg().setLine("-cp " + getHarnessClassPath());
+        cmd.createArg().setLine("-p " + getHarnessModulePath());
         cmd.createArg().setValue("com.sun.xml.ws.test.Main");
         if (project.getFile() != null) {
             cmd.createArg().setLine("-report " + resultsDirectory.getAbsolutePath());
@@ -579,15 +581,50 @@ public class WSTestMojo extends AbstractMojo {
         return Os.isFamily(Os.FAMILY_WINDOWS) ? "java.exe" : "java";
     }
 
+    static Set<Artifact> hLib = null;
+    
     private String getHarnessClassPath() throws MojoExecutionException {
         StringBuilder sb = new StringBuilder();
-        for (Artifact a : getHarnessLib()) {
-            sb.append(a.getFile().getAbsolutePath());
-            sb.append(File.pathSeparator);
+        if (hLib == null) {
+            hLib = getHarnessLib();
+        }
+        for (Artifact a : hLib) {
+            if (!isModule(a)) {
+                sb.append(a.getFile().getAbsolutePath());
+                sb.append(File.pathSeparator);
+            }
         }
         return sb.substring(0, sb.length() - 1);
     }
 
+    private String getHarnessModulePath() throws MojoExecutionException {
+        StringBuilder sb = new StringBuilder();
+        if (hLib == null) {
+            hLib = getHarnessLib();
+        }
+        for (Artifact a : hLib) {
+            if (isModule(a)) {
+                sb.append(a.getFile().getAbsolutePath());
+                sb.append(File.pathSeparator);
+            }
+        }
+        return sb.substring(0, sb.length() - 1);
+    }
+
+    private boolean isModule(Artifact a) {
+        try {
+            JarFile jf = new JarFile(a.getFile());
+            if (jf.getEntry("module-info.class") != null) {
+                return true;
+            }
+            if (jf.getManifest().getMainAttributes().getValue("Automatic-Module-Name") != null) {
+                return true;
+            }
+        } catch (IOException ioe) {
+        }
+        return false;
+    }
+    
     private Set<Artifact> getHarnessLib() throws MojoExecutionException {
        org.eclipse.aether.artifact.DefaultArtifact harnessLib = new org.eclipse.aether.artifact.DefaultArtifact(HARNESS_GID,HARNESS_AID, null, "jar", harnessVersion);
        Set<Artifact> result = new HashSet<>();

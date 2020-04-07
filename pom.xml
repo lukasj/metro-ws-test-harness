@@ -72,7 +72,7 @@
         <jakarta.activation.version>1.2.1</jakarta.activation.version>
         <istack-commons.version>3.1.0-SNAPSHOT</istack-commons.version>
         <metro.version>2.4.3</metro.version>
-        <jaxws-ri.version>2.3.2</jaxws-ri.version>
+        <jaxws-ri.version>2.4.0-SNAPSHOT</jaxws-ri.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <legal.doc.source>${maven.multiModuleProjectDirectory}</legal.doc.source>
     </properties>
@@ -305,15 +305,6 @@
                 <configuration>
                     <excludeFile>copyright-exclude</excludeFile>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>copyright-check</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

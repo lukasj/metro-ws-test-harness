@@ -203,7 +203,7 @@ public class ClientExecutor extends Executor {
                             .loadClass("javax.xml.ws.WebEndpoint").asSubclass(Annotation.class);
                     Method nameMethod = webendpointAnnotation.getDeclaredMethod("name");
 
-                    Object serviceInstance = clazz.newInstance();
+                    Object serviceInstance = clazz.getDeclaredConstructor().newInstance();
 
                     //{// inject a service instance
                     String serviceVarName = Introspector.decapitalize(clazz.getSimpleName());

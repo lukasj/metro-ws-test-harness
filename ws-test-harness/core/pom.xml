@@ -34,6 +34,11 @@
 
     <dependencies>
         <dependency>
+          <groupId>com.sun.xml.ws</groupId>
+          <artifactId>jaxws-tools</artifactId>
+          <version>2.4.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
           <groupId>com.sun.activation</groupId>
           <artifactId>jakarta.activation</artifactId>
         </dependency>
@@ -147,9 +152,36 @@
                 <configuration>
                     <target>
                         <delete dir="target/surefire-reports" />
-
+<!--<echoproperties/>-->
                         <java classname="com.sun.xml.ws.test.Main" fork="true" classpathref="maven.test.classpath" failonerror="true">
-                            <jvmarg line="${harness.extra.jvm.arg} ${harness.extra.jvm.arg.internal} -Dign=nn"/>
+<!--                            <classpath>
+                                <pathelement path="${maven.dependency.org.glassfish.external.management-api.jar.path}"/>
+                            </classpath>-->
+<!--                            <classpath>
+                                <pathelement path="${maven.dependency.org.apache.ant.ant.jar.path}"/>
+                                <pathelement path="${maven.dependency.org.apache-extras.beanshell.bsh.jar.path}"/>
+                                <pathelement path="${maven.dependency.org.relaxng.jing.jar.path}"/>
+                                <pathelement path="${maven.dependency.org.apache.ant.ant-launcher.jar.path}"/>
+                                <pathelement path="${maven.dependency.org.codehaus.plexus.plexus-classworlds.jar.path}"/>
+                                <pathelement path="${maven.dependency.junit.junit.jar.path}"/>
+                                <pathelement path="${maven.dependency.args4j.args4j.jar.path}"/>
+                                <pathelement path="${maven.dependency.org.codehaus.cargo.cargo-core-uberjar.jar.path}"/>
+                                <pathelement path="${maven.dependency.org.hamcrest.hamcrest-core.jar.path}"/>
+                                <pathelement path="${maven.dependency.org.apache.ant.ant-junit.jar.path}"/>
+                                <pathelement path="${maven.dependency.org.freemarker.freemarker.jar.path}"/>
+                            </classpath>
+                            <modulepath>
+                                <pathelement path="${maven.dependency.com.sun.activation.jakarta.activation.jar.path}"/>
+                                <pathelement path="${maven.dependency.jakarta.annotation.jakarta.annotation-api.jar.path}"/>
+                                <pathelement path="${maven.dependency.jakarta.jws.jakarta.jws-api.jar.path}"/>
+                                <pathelement path="${maven.dependency.jakarta.xml.soap.jakarta.xml.soap-api.jar.path}"/>
+                                <pathelement path="${maven.dependency.jakarta.xml.ws.jakarta.xml.ws-api.jar.path}"/>
+                                <pathelement path="${maven.dependency.com.sun.istack.istack-commons-runtime.jar.path}"/>
+                                <pathelement path="${maven.dependency.com.sun.istack.istack-commons-test.jar.path}"/>
+                                <pathelement path="${maven.dependency.jakarta.xml.bind.jakarta.xml.bind-api.jar.path}"/>
+                            </modulepath>-->
+                            <!--<jvmarg line="${harness.extra.jvm.arg} ${harness.extra.jvm.arg.internal} -Dign=nn - -add-opens java.base/java.lang=com.sun.xml.ws - -add-opens java.base/jdk.internal.misc=com.sun.xml.ws -DHARNESS_EXT=/Users/lukas/development/github/eclipse-ee4j/metro-jax-ws/jaxws-ri/tests/unit/target/harness-extensions" />-->
+                            <jvmarg line="${harness.extra.jvm.arg} ${harness.extra.jvm.arg.internal} -Dign=nn --add-opens java.base/java.lang=com.sun.xml.ws --add-opens java.base/jdk.internal.misc=com.sun.xml.ws" />
                             <!--<jvmarg line="-Djava.endorsed.dirs=${basedir}/target/endorsed" />-->
                             <!--<jvmarg line="- -upgrade-module-path=${basedir}/target/endorsed ${harness.extra.jvm.arg}" />-->
                             <!--<jvmarg line="-Dharness.deploy.timeout=60000 -Dharness.useSSL=true -Dharness.ssl.home=${project.basedir}/src/test/certs" />-->
@@ -169,7 +201,10 @@
 
                             <!-- test data -->
                             <arg value="-r" />
-                            <arg path="src/test/${testcases}" />
+                            <arg path="/Users/lukas/development/github/eclipse-ee4j/metro-jax-ws/jaxws-ri/tests/unit/testcases" />
+                            <!--<arg path="/Users/lukas/development/github/eclipse-ee4j/metro-jax-ws/jaxws-ri/tests/unit/testcases/whitebox/exception_mapping" />-->
+                            <!--<arg path="src/test/${testcases}" />-->
+                            <!--<arg path="src/test/${testcases}/mtom" />-->
 
                         </java>
                     </target>
@@ -189,7 +224,7 @@
             </activation>
             <properties>
                 <image>-cp:jaxws-image target/jaxws-ri-image/jaxws-ri</image>
-                <testcases>testcases/jaxws</testcases>
+                <testcases>/Users/lukas/development/github/eclipse-ee4j/metro-jax-ws/jaxws-ri/tests/unit/testcases</testcases>
                 <harness.extra.jvm.arg.internal>-Djdk.util.jar.enableMultiRelease=force</harness.extra.jvm.arg.internal>
             </properties>
             <build>

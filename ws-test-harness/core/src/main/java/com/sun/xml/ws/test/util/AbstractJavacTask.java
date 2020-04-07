@@ -26,6 +26,7 @@ public abstract class AbstractJavacTask extends Javac {
         setTaskName(toolName);
         setCompiler(adapterClass.getName());
         setClasspath(World.runtime.getPath());
+        setModulepath(World.runtime.getModulePath());
     }
 
     public void addArguments(List<String> arguments) {

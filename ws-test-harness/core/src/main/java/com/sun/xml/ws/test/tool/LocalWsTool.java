@@ -34,6 +34,7 @@ final class LocalWsTool extends WsTool {
             System.out.println("Using "+Which.which(wsimport));
             main = wsimport.getMethod("doMain",String[].class);
             Thread.currentThread().setContextClassLoader(World.tool.getClassLoader());
+//            Thread.currentThread().setContextClassLoader(World.tool.getClassLoader().getParent());
         } catch (ClassNotFoundException e) {
             throw new Error("Unable to find tool "+className,e);
         } catch (NoSuchMethodException e) {
@@ -49,7 +50,7 @@ final class LocalWsTool extends WsTool {
             params.addAll(Arrays.asList(args));
             dumpWsParams(params);
         }
-
+//Thread.currentThread().setContextClassLoader(World.tool.getClassLoader().getParent());
         int r = (Integer)main.invoke(null,new Object[]{args});
         if(r!=0)
             assertEquals("wsimport reported exit code "+r, 0,r);

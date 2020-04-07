@@ -30,9 +30,10 @@ import org.apache.tools.ant.types.Path;
 import javax.jws.WebService;
 import javax.xml.namespace.QName;
 import javax.xml.ws.WebEndpoint;
-import javax.xml.ws.WebServiceClient;
+//import javax.xml.ws.WebServiceClient;
 import javax.xml.ws.WebServiceProvider;
 import java.io.File;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -139,20 +140,32 @@ public final class WAR {
             HashMap<String, QName> portNameToServiceName = new HashMap<String, QName>();
 
             String implClass = null;
-
+//            ClassLoader orig = Thread.currentThread().getContextClassLoader();
             ClassLoader loader = new URLClassLoader(
                     new URL[]{classDir.toURL()},
-                    World.runtime.getClassLoader()
+                    WAR.class.getModule().getClassLoader()
+//                    Thread.currentThread().getContextClassLoader()
             );
-
-            WebServiceClient wsca = null;
+//            String tns = null;
+//            String wsdlLocation = null;
+//            try {
+//            Thread.currentThread().setContextClassLoader(loader);
+            Class<?> x = loader.loadClass("javax.xml.ws.WebServiceClient");
+            javax.xml.ws.WebServiceClient wsca = null;
             for (String className : FileUtil.getClassFileNames(classDir)) {
 
                 Class clazz = loader.loadClass(className);
-
+                clazz.getAnnotations();
                 // prevent setting null ...
-                if (clazz.getAnnotation(WebServiceClient.class) != null) {
-                    wsca = (WebServiceClient) clazz.getAnnotation(WebServiceClient.class);
+                for (Annotation an : clazz.getAnnotations()) {
+                    System.out.println("Ann: " + an.toString());
+                    System.out.println("Ann: " + an.annotationType().getCanonicalName());
+                    System.out.println("Ann: " + an.annotationType().getModule());
+                    System.out.println("Ann: " + an.annotationType().getModule().getName());
+//                    System.out.println("Ann: " + an.annotationType().);
+                }
+                if (clazz.getAnnotation(x) != null) {
+                    wsca = (javax.xml.ws.WebServiceClient) clazz.getAnnotation(x);
                     for (Method method : clazz.getMethods()) {
                         WebEndpoint a = method.getAnnotation(WebEndpoint.class);
                         if (a != null && method.getParameterTypes().length == 0) {
@@ -202,7 +215,9 @@ public final class WAR {
                                 wsdlLocation.lastIndexOf("/") + 1,
                                 wsdlLocation.length());
             }
-
+//            } finally {
+//                Thread.currentThread().setContextClassLoader(orig);
+//            }
             int i = 0;
             for (String portName : portNames) {
                 String impl = portNameToImpl.get(portName);
@@ -474,9 +489,17 @@ public final class WAR {
             cp.createPathElement().setLocation(classDir);
             cp.add(World.tool.getPath());
             cp.add(World.runtime.getPath());
+            cp.add(World.tool.getModulePath());
+            cp.add(World.runtime.getModulePath());
             if(World.debug)
                 System.out.println("wsgen classpath arg = " + cp);
             options.add("-cp").add(cp);
+//            cp = new Path(World.project);
+//            cp.add(World.tool.getModulePath());
+//            cp.add(World.runtime.getModulePath());
+//            if(World.debug)
+//                System.out.println("wsgen modulepath arg = " + cp);
+//            options.add("-mp").add(cp);
             options.add("-s").add(service.service.parent.disgardWsGenOutput ? NOWHERE : classDir);
             options.add("-d").add(service.service.parent.disgardWsGenOutput ? NOWHERE : classDir);
 

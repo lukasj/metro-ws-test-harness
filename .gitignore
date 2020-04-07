@@ -6,3 +6,4 @@ pom.xml.versionsBackup
 pom.xml.next
 release.properties
 buildNumber.properties
+/ws-test-harness/core/nbproject/

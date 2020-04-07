@@ -265,6 +265,8 @@ public class Main {
     public int run() throws Exception {
         fillWorld();
 
+        Thread.currentThread().setContextClassLoader(World.runtime.getClassLoader());
+        
         if (dump) {
             // standalone version
             System.setProperty("com.sun.xml.ws.transport.local.LocalTransportTube.dump", "true");
@@ -436,14 +438,14 @@ public class Main {
             if (new File(jaxwsImage, "lib/jaxb-jxc.jar").exists()) {
                 tool.addJar(new File(jaxwsImage, "lib/jaxb-jxc.jar"));
             }
-            tool.addJar(new File(jaxwsImage, "lib/jaxb-xjc.jar"));
+//            tool.addJar(new File(jaxwsImage, "lib/jaxb-xjc.jar"));
             List<String> exclusionList = new ArrayList<>();
             exclusionList.add("saaj-api.jar");
             exclusionList.add("jaxb-api.jar");
             exclusionList.add("jaxws-tools.jar");
             exclusionList.add("jaxws-api.jar");
             exclusionList.add("jaxb-jxc.jar");
-            exclusionList.add("jaxb-xjc.jar");
+//            exclusionList.add("jaxb-xjc.jar");
             if (System.getProperty("java.endorsed.dirs") != null) {
                 // APIs should come from endorsed on JDK 8 and older
                 exclusionList.add("jakarta.jws-api.jar");
@@ -601,6 +603,7 @@ public class Main {
             tool.addJar(classesJar);
         }
 
+        runtime.addHarnessDeps();
 
         if (debug) {
             Interpreter.DEBUG = true;
